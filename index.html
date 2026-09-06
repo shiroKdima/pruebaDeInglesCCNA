@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Herramienta interactiva de estudio para comprender configuraciones de VLAN en CCNA.">
+  <title>CCNA VLAN Configuration | Translation & Understanding</title>
+  <style>
+    :root {
+      --navy: #0b1f33;
+      --navy-light: #143b5d;
+      --blue: #087ea4;
+      --blue-bright: #15a6c9;
+      --cyan-soft: #e7f7fb;
+      --ink: #172b3a;
+      --muted: #607484;
+      --line: #d8e4ea;
+      --surface: #ffffff;
+      --background: #eef4f7;
+      --success: #19734a;
+      --success-bg: #e9f7ef;
+      --warning: #9a5a05;
+      --warning-bg: #fff5df;
+      --danger: #a93636;
+      --danger-bg: #fff0f0;
+      --shadow: 0 18px 50px rgba(22, 57, 79, 0.13);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-width: 320px;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at 12% 8%, rgba(21, 166, 201, 0.16), transparent 28rem),
+        linear-gradient(145deg, #f5fafc 0%, var(--background) 58%, #e7f0f4 100%);
+      font-family: "Trebuchet MS", "Segoe UI", sans-serif;
+      line-height: 1.5;
+    }
+
+    .app-shell {
+      width: min(100% - 2rem, 980px);
+      margin: 0 auto;
+      padding: 2rem 0 3rem;
+    }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 0.7rem;
+      color: var(--navy);
+      font-weight: 800;
+      letter-spacing: 0.04em;
+    }
+
+    .brand-mark {
+      display: grid;
+      place-items: center;
+      width: 2.5rem;
+      height: 2.5rem;
+      border-radius: 10px;
+      color: white;
+      background: var(--blue);
+      box-shadow: 0 7px 18px rgba(8, 126, 164, 0.25);
+      font-size: 0.9rem;
+    }
+
+    .progress-label {
+      color: var(--muted);
+      font-size: 0.84rem;
+      font-weight: 700;
+      text-align: right;
+    }
+
+    .progress-track {
+      width: 9rem;
+      height: 0.4rem;
+      margin-top: 0.35rem;
+      overflow: hidden;
+      border-radius: 999px;
+      background: #d3e2e8;
+    }
+
+    .progress-value {
+      height: 100%;
+      width: 20%;
+      border-radius: inherit;
+      background: linear-gradient(90deg, var(--blue), var(--blue-bright));
+      transition: width 250ms ease;
+    }
+
+    .hero {
+      margin-bottom: 1.5rem;
+    }
+
+    .eyebrow {
+      margin: 0 0 0.45rem;
+      color: var(--blue);
+      font-size: 0.76rem;
+      font-weight: 800;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+    }
+
+    h1 {
+      max-width: 760px;
+      margin: 0;
+      color: var(--navy);
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: clamp(2rem, 5vw, 3.5rem);
+      font-weight: 700;
+      letter-spacing: 0;
+      line-height: 1.08;
+    }
+
+    .intro {
+      max-width: 680px;
+      margin: 0.9rem 0 0;
+      color: var(--muted);
+      font-size: 1.05rem;
+    }
+
+    .workspace {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 220px;
+      gap: 1rem;
+      align-items: start;
+    }
+
+    .card {
+      border: 1px solid rgba(216, 228, 234, 0.95);
+      border-radius: 14px;
+      background: rgba(255, 255, 255, 0.92);
+      box-shadow: var(--shadow);
+    }
+
+    .exercise-card {
+      padding: clamp(1.25rem, 4vw, 2.2rem);
+    }
+
+    .scenario-meta {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      margin-bottom: 1.4rem;
+    }
+
+    .scenario-number {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.45rem;
+      color: var(--blue);
+      font-size: 0.8rem;
+      font-weight: 800;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+    }
+
+    .scenario-number::before {
+      content: "";
+      width: 1.5rem;
+      height: 2px;
+      background: var(--blue-bright);
+    }
+
+    .mode-badge {
+      padding: 0.35rem 0.65rem;
+      border: 1px solid #b9dde6;
+      border-radius: 999px;
+      color: var(--blue);
+      background: var(--cyan-soft);
+      font-size: 0.75rem;
+      font-weight: 800;
+    }
+
+    .english-command {
+      min-height: 6.8rem;
+      margin: 0 0 1.7rem;
+      color: var(--navy);
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: clamp(1.35rem, 3vw, 1.8rem);
+      line-height: 1.35;
+    }
+
+    .prompt-label {
+      display: block;
+      margin-bottom: 0.55rem;
+      color: var(--ink);
+      font-size: 0.93rem;
+      font-weight: 800;
+    }
+
+    textarea {
+      display: block;
+      width: 100%;
+      min-height: 170px;
+      resize: vertical;
+      padding: 1rem;
+      border: 2px solid var(--line);
+      border-radius: 9px;
+      outline: none;
+      color: var(--ink);
+      background: #fbfdfe;
+      font: inherit;
+      transition: border-color 180ms ease, box-shadow 180ms ease;
+    }
+
+    textarea:focus {
+      border-color: var(--blue);
+      box-shadow: 0 0 0 4px rgba(8, 126, 164, 0.12);
+    }
+
+    textarea::placeholder { color: #91a2ad; }
+
+    .action-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+      margin-top: 1rem;
+    }
+
+    button {
+      min-height: 2.9rem;
+      padding: 0.7rem 1rem;
+      border: 0;
+      border-radius: 7px;
+      cursor: pointer;
+      font: inherit;
+      font-weight: 800;
+      transition: transform 160ms ease, box-shadow 160ms ease, background 160ms ease;
+    }
+
+    button:hover { transform: translateY(-1px); }
+    button:focus-visible { outline: 3px solid rgba(21, 166, 201, 0.4); outline-offset: 2px; }
+
+    .primary-button {
+      color: white;
+      background: var(--blue);
+      box-shadow: 0 6px 14px rgba(8, 126, 164, 0.2);
+    }
+
+    .primary-button:hover { background: #066b8b; }
+
+    .secondary-button {
+      color: var(--navy-light);
+      background: #e6eef2;
+    }
+
+    .secondary-button:hover { background: #d7e5eb; }
+
+    .secondary-button:disabled {
+      cursor: not-allowed;
+      opacity: 0.48;
+      transform: none;
+    }
+
+    .feedback {
+      display: none;
+      margin-top: 1.25rem;
+      padding: 1rem 1.1rem;
+      border-left: 4px solid;
+      border-radius: 7px;
+      font-size: 0.96rem;
+    }
+
+    .feedback.visible { display: block; animation: appear 220ms ease-out; }
+    .feedback.success { border-color: var(--success); color: var(--success); background: var(--success-bg); }
+    .feedback.warning { border-color: var(--warning); color: var(--warning); background: var(--warning-bg); }
+    .feedback.error { border-color: var(--danger); color: var(--danger); background: var(--danger-bg); }
+    .feedback strong { display: block; margin-bottom: 0.25rem; }
+
+    .sidebar {
+      padding: 1.25rem;
+    }
+
+    .sidebar h2 {
+      margin: 0 0 1rem;
+      color: var(--navy);
+      font-size: 1rem;
+    }
+
+    .scenario-list {
+      display: grid;
+      gap: 0.55rem;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    .scenario-list li {
+      display: flex;
+      align-items: center;
+      gap: 0.65rem;
+      padding: 0.55rem;
+      border-radius: 7px;
+      color: var(--muted);
+      font-size: 0.84rem;
+    }
+
+    .scenario-list li.active {
+      color: var(--navy);
+      background: var(--cyan-soft);
+      font-weight: 800;
+    }
+
+    .list-marker {
+      display: grid;
+      flex: 0 0 1.5rem;
+      place-items: center;
+      width: 1.5rem;
+      height: 1.5rem;
+      border-radius: 50%;
+      background: #dce8ed;
+      color: var(--muted);
+      font-size: 0.75rem;
+      font-weight: 800;
+    }
+
+    .active .list-marker { color: white; background: var(--blue); }
+    .completed .list-marker { color: white; background: var(--success); }
+
+    .tip {
+      margin: 1.4rem 0 0;
+      padding-top: 1rem;
+      border-top: 1px solid var(--line);
+      color: var(--muted);
+      font-size: 0.8rem;
+    }
+
+    @keyframes appear {
+      from { opacity: 0; transform: translateY(5px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @media (max-width: 720px) {
+      .app-shell { padding-top: 1.25rem; }
+      .topbar { align-items: flex-start; }
+      .workspace { grid-template-columns: 1fr; }
+      .sidebar { order: 2; }
+      .progress-track { width: 7rem; }
+    }
+
+    @media (max-width: 460px) {
+      .app-shell { width: min(100% - 1.1rem, 980px); }
+      .topbar { margin-bottom: 1.1rem; }
+      .brand span { max-width: 145px; line-height: 1.15; }
+      .exercise-card { padding: 1rem; }
+      .scenario-meta { align-items: flex-start; flex-direction: column; gap: 0.65rem; }
+      .action-row button { width: 100%; }
+    }
+  </style>
+</head>
+<body>
+  <main class="app-shell">
+    <header class="topbar">
+      <div class="brand" aria-label="CCNA study tool">
+        <span class="brand-mark">CCNA</span>
+        <span>Network Study Lab</span>
+      </div>
+      <div class="progress-label">
+        <span id="progressText">Escenario 1 de 5</span>
+        <div class="progress-track" aria-hidden="true"><div class="progress-value" id="progressValue"></div></div>
+      </div>
+    </header>
+
+    <section class="hero" aria-labelledby="pageTitle">
+      <p class="eyebrow">VLAN configuration practice</p>
+      <h1 id="pageTitle">CCNA VLAN Configuration - Translation &amp; Understanding</h1>
+      <p class="intro">Lee la instrucción en inglés y demuestra que comprendes qué debes configurar en el switch.</p>
+    </section>
+
+    <div class="workspace">
+      <section class="card exercise-card" aria-live="polite">
+        <div class="scenario-meta">
+          <span class="scenario-number" id="scenarioNumber">Escenario 01</span>
+          <span class="mode-badge">ENGLISH COMMAND</span>
+        </div>
+        <p class="english-command" id="englishCommand"></p>
+        <label class="prompt-label" for="answer">Explica en español qué entiendes que debes configurar:</label>
+        <textarea id="answer" placeholder="Escribe aquí los elementos importantes de la configuración..." spellcheck="true"></textarea>
+        <div class="action-row">
+          <button class="primary-button" id="checkButton" type="button">Verificar Respuesta</button>
+          <button class="secondary-button" id="nextButton" type="button" disabled>Siguiente Escenario</button>
+        </div>
+        <div class="feedback" id="feedback" role="status"></div>
+      </section>
+
+      <aside class="card sidebar" aria-label="Lista de escenarios">
+        <h2>Ruta de estudio</h2>
+        <ol class="scenario-list" id="scenarioList"></ol>
+        <p class="tip">Incluye la acción, la interfaz o VLAN y los parámetros técnicos que reconozcas.</p>
+      </aside>
+    </div>
+  </main>
+
+  <script>
+    const scenarios = [
+      {
+        command: 'Create VLAN 20 and assign the name MARKETING to it.',
+        keywords: ['crear', 'vlan 20', 'nombre', 'marketing'],
+        hints: ['crear la VLAN 20', 'asignar el nombre MARKETING']
+      },
+      {
+        command: 'Configure interface FastEthernet 0/5 as an access port and assign it to VLAN 20.',
+        keywords: ['configurar', 'fastethernet 0/5', 'access', 'acceso', 'vlan 20'],
+        hints: ['configurar FastEthernet 0/5', 'modo access o acceso', 'asignarla a la VLAN 20']
+      },
+      {
+        command: 'Configure interface GigabitEthernet 0/1 as an 802.1q trunk link.',
+        keywords: ['configurar', 'gigabitethernet 0/1', '802.1q', 'trunk', 'troncal'],
+        hints: ['configurar GigabitEthernet 0/1', 'usar 802.1Q', 'convertirla en un enlace trunk o troncal']
+      },
+      {
+        command: 'Restrict the trunk link on GigabitEthernet 0/1 to only allow VLANs 10, 20, and 30.',
+        keywords: ['restringir', 'trunk', 'troncal', 'gigabitethernet 0/1', 'vlan 10', 'vlan 20', 'vlan 30'],
+        hints: ['restringir el trunk de GigabitEthernet 0/1', 'permitir únicamente las VLAN 10, 20 y 30']
+      },
+      {
+        command: 'Create a Switch Virtual Interface (SVI) for VLAN 10 and assign the IP address 192.168.10.1/24.',
+        keywords: ['crear', 'svi', 'interface vlan 10', 'vlan 10', '192.168.10.1/24'],
+        hints: ['crear una SVI o interface VLAN 10', 'asignar la IP 192.168.10.1/24']
+      }
+    ];
+
+    let currentIndex = 0;
+    const completed = new Set();
+
+    const englishCommand = document.getElementById('englishCommand');
+    const answer = document.getElementById('answer');
+    const feedback = document.getElementById('feedback');
+    const nextButton = document.getElementById('nextButton');
+    const checkButton = document.getElementById('checkButton');
+    const progressText = document.getElementById('progressText');
+    const progressValue = document.getElementById('progressValue');
+    const scenarioNumber = document.getElementById('scenarioNumber');
+    const scenarioList = document.getElementById('scenarioList');
+
+    function normalize(text) {
+      return text.toLocaleLowerCase('es').normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    }
+
+    function renderScenarioList() {
+      scenarioList.innerHTML = scenarios.map((scenario, index) => {
+        const state = index === currentIndex ? 'active' : (completed.has(index) ? 'completed' : '');
+        return `<li class="${state}"><span class="list-marker">${completed.has(index) ? 'OK' : index + 1}</span><span>Escenario ${index + 1}</span></li>`;
+      }).join('');
+    }
+
+    function renderScenario() {
+      const scenario = scenarios[currentIndex];
+      englishCommand.textContent = scenario.command;
+      scenarioNumber.textContent = `Escenario ${String(currentIndex + 1).padStart(2, '0')}`;
+      progressText.textContent = `Escenario ${currentIndex + 1} de ${scenarios.length}`;
+      progressValue.style.width = `${((currentIndex + 1) / scenarios.length) * 100}%`;
+      answer.value = '';
+      feedback.className = 'feedback';
+      feedback.innerHTML = '';
+      nextButton.disabled = true;
+      nextButton.textContent = currentIndex === scenarios.length - 1 ? 'Reiniciar práctica' : 'Siguiente Escenario';
+      renderScenarioList();
+      answer.focus();
+    }
+
+    function verifyAnswer() {
+      const scenario = scenarios[currentIndex];
+      const normalizedAnswer = normalize(answer.value.trim());
+      const foundKeywords = scenario.keywords.filter(keyword => normalizedAnswer.includes(normalize(keyword)));
+      const missingKeywords = scenario.keywords.filter(keyword => !normalizedAnswer.includes(normalize(keyword)));
+      const percentage = foundKeywords.length / scenario.keywords.length;
+
+      feedback.className = 'feedback visible';
+      if (!normalizedAnswer) {
+        feedback.classList.add('error');
+        feedback.innerHTML = '<strong>Escribe una explicación primero.</strong>Incluye la acción principal y los detalles técnicos que identifiques.';
+        nextButton.disabled = true;
+        return;
+      }
+
+      if (percentage >= 0.75) {
+        completed.add(currentIndex);
+        feedback.classList.add('success');
+        feedback.innerHTML = `<strong>Comprensión correcta.</strong>Reconociste ${foundKeywords.length} de ${scenario.keywords.length} elementos clave. ¡Buen trabajo!`;
+        nextButton.disabled = false;
+        renderScenarioList();
+      } else {
+        feedback.classList.add(percentage >= 0.5 ? 'warning' : 'error');
+        const suggestions = missingKeywords.map(keyword => `<strong>${keyword}</strong>`).join(', ');
+        feedback.innerHTML = `<strong>Aún faltan detalles técnicos.</strong>Revisa estos conceptos: ${suggestions}.`;
+        nextButton.disabled = true;
+      }
+    }
+
+    function goToNextScenario() {
+      if (currentIndex === scenarios.length - 1) {
+        currentIndex = 0;
+        completed.clear();
+      } else {
+        currentIndex += 1;
+      }
+      renderScenario();
+    }
+
+    checkButton.addEventListener('click', verifyAnswer);
+    nextButton.addEventListener('click', goToNextScenario);
+    answer.addEventListener('keydown', event => {
+      if ((event.ctrlKey || event.metaKey) && event.key === 'Enter') verifyAnswer();
+    });
+
+    renderScenario();
+  </script>
+</body>
+</html>
