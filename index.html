@@ -279,6 +279,15 @@
     .feedback.error { border-color: var(--danger); color: var(--danger); background: var(--danger-bg); }
     .feedback strong { display: block; margin-bottom: 0.25rem; }
 
+    .feedback-details {
+      margin: 0.65rem 0 0;
+      padding-left: 1.2rem;
+    }
+
+    .feedback-details li { margin: 0.2rem 0; }
+
+    .feedback-details strong { display: inline; }
+
     .sidebar {
       padding: 1.25rem;
     }
@@ -412,17 +421,17 @@
       },
       {
         command: 'Configure interface FastEthernet 0/5 as an access port and assign it to VLAN 20.',
-        keywords: ['configurar', 'fastethernet 0/5', 'access', 'acceso', 'vlan 20'],
+        keywordGroups: [['configurar'], ['fastethernet 0/5'], ['access', 'acceso'], ['vlan 20']],
         hints: ['configurar FastEthernet 0/5', 'modo access o acceso', 'asignarla a la VLAN 20']
       },
       {
         command: 'Configure interface GigabitEthernet 0/1 as an 802.1q trunk link.',
-        keywords: ['configurar', 'gigabitethernet 0/1', '802.1q', 'trunk', 'troncal'],
+        keywordGroups: [['configurar'], ['gigabitethernet 0/1'], ['802.1q'], ['trunk', 'troncal']],
         hints: ['configurar GigabitEthernet 0/1', 'usar 802.1Q', 'convertirla en un enlace trunk o troncal']
       },
       {
         command: 'Restrict the trunk link on GigabitEthernet 0/1 to only allow VLANs 10, 20, and 30.',
-        keywords: ['restringir', 'trunk', 'troncal', 'gigabitethernet 0/1', 'vlan 10', 'vlan 20', 'vlan 30'],
+        keywordGroups: [['restringir', 'permitir', 'limitar'], ['trunk', 'troncal'], ['gigabitethernet 0/1'], ['vlan 10'], ['vlan 20'], ['vlan 30']],
         hints: ['restringir el trunk de GigabitEthernet 0/1', 'permitir únicamente las VLAN 10, 20 y 30']
       },
       {
@@ -474,9 +483,20 @@
     function verifyAnswer() {
       const scenario = scenarios[currentIndex];
       const normalizedAnswer = normalize(answer.value.trim());
-      const foundKeywords = scenario.keywords.filter(keyword => normalizedAnswer.includes(normalize(keyword)));
-      const missingKeywords = scenario.keywords.filter(keyword => !normalizedAnswer.includes(normalize(keyword)));
-      const percentage = foundKeywords.length / scenario.keywords.length;
+      const keywordGroups = scenario.keywordGroups || scenario.keywords.map(keyword => [keyword]);
+      const foundGroups = keywordGroups.filter(group => group.some(keyword => normalizedAnswer.includes(normalize(keyword))));
+      const missingGroups = keywordGroups
+        .map((group, index) => ({ group, index }))
+        .filter(item => !item.group.some(keyword => normalizedAnswer.includes(normalize(keyword))));
+      const percentage = foundGroups.length / keywordGroups.length;
+
+      const formatMissingDetails = () => {
+        const missingHints = missingGroups.map(({ group, index }) => {
+          const hint = scenario.hints[index] || group.join(' o ');
+          return `<li>${hint}</li>`;
+        }).join('');
+        return missingHints ? `<div>Te faltó mencionar:</div><ul class="feedback-details">${missingHints}</ul>` : '';
+      };
 
       feedback.className = 'feedback visible';
       if (!normalizedAnswer) {
@@ -489,13 +509,12 @@
       if (percentage >= 0.75) {
         completed.add(currentIndex);
         feedback.classList.add('success');
-        feedback.innerHTML = `<strong>Comprensión correcta.</strong>Reconociste ${foundKeywords.length} de ${scenario.keywords.length} elementos clave. ¡Buen trabajo!`;
+        feedback.innerHTML = `<strong>Comprensión correcta.</strong>Reconociste ${foundGroups.length} de ${keywordGroups.length} elementos clave. ¡Buen trabajo!${formatMissingDetails()}`;
         nextButton.disabled = false;
         renderScenarioList();
       } else {
         feedback.classList.add(percentage >= 0.5 ? 'warning' : 'error');
-        const suggestions = missingKeywords.map(keyword => `<strong>${keyword}</strong>`).join(', ');
-        feedback.innerHTML = `<strong>Aún faltan detalles técnicos.</strong>Revisa estos conceptos: ${suggestions}.`;
+        feedback.innerHTML = `<strong>Aún faltan detalles técnicos.</strong>Reconociste ${foundGroups.length} de ${keywordGroups.length} elementos clave.${formatMissingDetails()}`;
         nextButton.disabled = true;
       }
     }
